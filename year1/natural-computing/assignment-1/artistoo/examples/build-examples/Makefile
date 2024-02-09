@@ -3,7 +3,7 @@
 
 all : node-examples html-examples
 
-EXAMPLES=MySimulation2 MySimulation1 SuperCells StochasticCorrector DiffusionLimitedAggregation ActModelCustomStat NoTorusDemo CancerInvasion ManyCellsDiffusion CollectiveMigration SIR ActOnMicroPattern GameOfLife Chemotaxis Diffusion DirectedMotionTargetPoint DirectedMotionLinear CellDivision SingleCell RandomWalk ManyCellsPrefDir IsingModel EpidermisWithTCells Epidermis Cellsorting ActModel Microchannel EpithelialSheet
+EXAMPLES=MySimulation3 MySimulation2 MySimulation1 SuperCells StochasticCorrector DiffusionLimitedAggregation ActModelCustomStat NoTorusDemo CancerInvasion ManyCellsDiffusion CollectiveMigration SIR ActOnMicroPattern GameOfLife Chemotaxis Diffusion DirectedMotionTargetPoint DirectedMotionLinear CellDivision SingleCell RandomWalk ManyCellsPrefDir IsingModel EpidermisWithTCells Epidermis Cellsorting ActModel Microchannel EpithelialSheet
 
 
 ../node/output/img/% :
