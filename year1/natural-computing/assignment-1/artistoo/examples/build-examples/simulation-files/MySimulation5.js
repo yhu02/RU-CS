@@ -69,7 +69,7 @@ function buildManyObjects(r, d){
 
 function buildObject(x, y, r){
 	this.object = this.gm.makeCircle( [x, y], r)
-	this.gm.assignCellPixels( this.object, 2)
+	this.gm.assignCellPixels( this.object, 2 )
 	this.C.add( new CPM.BorderConstraint({
 		BARRIER_VOXELS : this.object
 	}) )	
@@ -105,7 +105,7 @@ let config = {
 
 		
 		// Adhesion parameters:
-		J : [ [0,20, 0], [20,0, 0], [0,0,0] ],
+		J : [ [0,20, 0], [20,0, -20], [0,0,0] ],
 		
 		// VolumeConstraint parameters
 		LAMBDA_V : [0,50, 50],				// VolumeConstraint importance per cellkind
@@ -145,8 +145,8 @@ let config = {
 		SAVEIMG : true,						// Should a png image of the grid be saved
 		// during the simulation?
 		IMGFRAMERATE : 1,					// If so, do this every <IMGFRAMERATE> MCS.
-		SAVEPATH : "output/img/MySimulation3",	// ... And save the image in this folder.
-		EXPNAME : "MySimulation3",					// Used for the filename of output images.
+		SAVEPATH : "output/img/MySimulation5",	// ... And save the image in this folder.
+		EXPNAME : "MySimulation5",					// Used for the filename of output images.
 		
 		// Output stats etc
 		STATSOUT : { browser: false, node: true }, // Should stats be computed?
@@ -156,3 +156,4 @@ let config = {
 }
 /*	---------------------------------- */
 /* Do not remove this line: END CONFIGURATION */
+	

@@ -61,7 +61,7 @@ function buildObject(){
 	let gridWidth = this.C.extents[0]
 
 	this.object = this.gm.makeCircle( [gridHeight/2,gridWidth/2], 50 )
-	this.gm.assignCellPixels( this.object, 1 )
+	this.gm.assignCellPixels( this.object, 2)
 	this.C.add( new CPM.BorderConstraint({
 		BARRIER_VOXELS : this.object
 	}) )	
@@ -83,12 +83,12 @@ let config = {
 
 	// Grid settings
 	ndim : 2,
-	field_size : [500, 500],
+	field_size : [250,250],
 	
 	// CPM parameters and configuration
 	conf : {
 		// Basic CPM parameters
-		torus : [true,false],						// Should the grid have linked borders?
+		torus : [true,true],						// Should the grid have linked borders?
 		seed : 1,							// Seed for random number generation.
 		T : 20,								// CPM temperature
 		
@@ -96,24 +96,24 @@ let config = {
 		// Mostly these have the format of an array in which each element specifies the
 		// parameter value for one of the cellkinds on the grid.
 		// First value is always cellkind 0 (the background) and is often not used.
+
 		
 		// Adhesion parameters:
-		J : [ [NaN,20], [20,5] ],
+		J : [ [0,20, 0], [20,0, 0], [0,0,0] ],
 		
 		// VolumeConstraint parameters
-		LAMBDA_V : [0,30],				// VolumeConstraint importance per cellkind
-		V : [0,500],					// Target volume of each cellkind
+		LAMBDA_V : [0,50, 50],				// VolumeConstraint importance per cellkind
+		V : [0,200, 0],					// Target volume of each cellkind
 		
 		// PerimeterConstraint parameters
-		LAMBDA_P : [0,2],				// PerimeterConstraint importance per cellkind
-		P : [0,300],					// Target perimeter of each cellkind
+		LAMBDA_P : [0,2,0],				// PerimeterConstraint importance per cellkind
+		P : [0,180,0],					// Target perimeter of each cellkind
 		
 		// ActivityConstraint parameters
-		LAMBDA_ACT : [0,500],			// ActivityConstraint importance per cellkind
-		MAX_ACT : [0,40],				// Activity memory duration per cellkind
+		LAMBDA_ACT : [0,200,0],			// ActivityConstraint importance per cellkind
+		MAX_ACT : [0,20,0],				// Activity memory duration per cellkind
 		ACT_MEAN : "geometric"				// Is neighborhood activity computed as a
 		// "geometric" or "arithmetic" mean?
-								
 	},
 	
 	// Simulation setup and configuration: this controls stuff like grid initialization,
@@ -121,26 +121,26 @@ let config = {
 	simsettings : {
 	
 		// Cells on the grid
-		NRCELLS : [20],					// Number of cells to seed for all
+		NRCELLS : [0,0, 0],					// Number of cells to seed for all
 		// non-background cellkinds.
 		// Runtime etc
-		BURNIN : 100,
+		BURNIN : 50,
 		RUNTIME : 1000,
 		RUNTIME_BROWSER : "Inf",
 		
 		// Visualization
 		CANVASCOLOR : "eaecef",
 		CELLCOLOR : ["000000"],
-		ACTCOLOR : [true],					// Should pixel activity values be displayed?
+		ACTCOLOR : [true],			// Should pixel activity values be displayed?
 		SHOWBORDERS : [false],				// Should cellborders be displayed?
 		zoom : 2,							// zoom in on canvas with this factor.
 		
 		// Output images
-		SAVEIMG : true,					// Should a png image of the grid be saved
+		SAVEIMG : true,						// Should a png image of the grid be saved
 		// during the simulation?
 		IMGFRAMERATE : 1,					// If so, do this every <IMGFRAMERATE> MCS.
-		SAVEPATH : "output/img/MySimulation1",// ... And save the image in this folder.
-		EXPNAME : "MySimulation1",					// Used for the filename of output images.
+		SAVEPATH : "output/img/MySimulation3",	// ... And save the image in this folder.
+		EXPNAME : "MySimulation3",					// Used for the filename of output images.
 		
 		// Output stats etc
 		STATSOUT : { browser: false, node: true }, // Should stats be computed?
@@ -148,6 +148,5 @@ let config = {
 
 	}
 }
-
 /*	---------------------------------- */
 /* Do not remove this line: END CONFIGURATION */
