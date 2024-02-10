@@ -139,8 +139,8 @@ let config = {
 		SAVEIMG : true,					// Should a png image of the grid be saved
 		// during the simulation?
 		IMGFRAMERATE : 1,					// If so, do this every <IMGFRAMERATE> MCS.
-		SAVEPATH : "output/img/Microchannel",// ... And save the image in this folder.
-		EXPNAME : "Microchannel",					// Used for the filename of output images.
+		SAVEPATH : "output/img/MySimulation1",// ... And save the image in this folder.
+		EXPNAME : "MySimulation1",					// Used for the filename of output images.
 		
 		// Output stats etc
 		STATSOUT : { browser: false, node: true }, // Should stats be computed?

@@ -33,7 +33,9 @@ function initializeGrid(){
 	if( !this.helpClasses["gm"] ){ this.addGridManipulator() }
 	
 	let nrcells = this.conf["NRCELLS"], cellkind, i
-	this.buildManyObjects()
+
+	// Barrier Objects move when smaller than 9?
+	this.buildManyObjects(9, 5)
 		
 
 	// Seed the right number of cells for each cellkind
@@ -52,15 +54,18 @@ function initializeGrid(){
 	
 }
 
-function buildManyObjects(){
+function buildManyObjects(r, d){
 	let gridHeight = this.C.extents[1]
 	let gridWidth = this.C.extents[0]
-	for( let i = 0; i < 10; i++ ){
-		let x = Math.floor( Math.random() * gridWidth )
-		let y = Math.floor( Math.random() * gridHeight )
-		let r = Math.floor( Math.random() * gridHeight / 10 )
-
-		this.buildObject(x, y, r)
+	
+	// Calculate the spacing based on the grid size and density
+	const spacing = Math.sqrt((gridHeight * gridWidth))/ d;
+	
+	// Generate coordinates on the grid
+	for (let x = 0; x < gridWidth; x += spacing) {
+		for (let y = 0; y < gridHeight; y += spacing) {
+				this.buildObject(x, y, r)
+		}
 	}
 }
 
@@ -142,8 +147,8 @@ let config = {
 		SAVEIMG : true,						// Should a png image of the grid be saved
 		// during the simulation?
 		IMGFRAMERATE : 1,					// If so, do this every <IMGFRAMERATE> MCS.
-		SAVEPATH : "output/img/CollectiveMigration",	// ... And save the image in this folder.
-		EXPNAME : "CollectiveMigration",					// Used for the filename of output images.
+		SAVEPATH : "output/img/MySimulation3",	// ... And save the image in this folder.
+		EXPNAME : "MySimulation3",					// Used for the filename of output images.
 		
 		// Output stats etc
 		STATSOUT : { browser: false, node: true }, // Should stats be computed?
