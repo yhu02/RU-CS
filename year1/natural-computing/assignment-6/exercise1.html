@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Particle Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<link rel="stylesheet" href="/_p6rW7xlB3n2UooH"/></head>
+<body>
+    <script>
+        // Declare global variables
+        let Count = 0;
+        const orderParams = []; // Array to store order parameters
+        const neighborDistances = []; // Array to store nearest neighbor distances
+        
+        // Define Scene object with properties and methods
+        let Scene = {
+            w: 600,
+            h: 600,
+            swarm: [],
+            // Method to find neighbors within a given radius
+            neighbours(x, radius = 100) {
+                let r = [];
+                for (let p of this.swarm) {
+                    if (dist(p.pos.x, p.pos.y, x.x, x.y) <= radius) {
+                        r.push(p);
+                    }
+                }
+                return r;
+            }
+        };
+
+        // Define Particle class
+        class Particle {
+            constructor() {
+                this.pos = createVector(random(0, Scene.w), random(0, Scene.h));
+                this.dir = p5.Vector.random2D();
+                this.cohesion = 20;
+                this.separation = 0.1;
+                this.exclusion = 150;
+				this.alignment = 0.2
+                this.v = 3;
+            }
+
+            // Method to wrap particle around canvas edges
+            wrap() {
+                if (this.pos.x < 0) this.pos.x += Scene.w;
+                if (this.pos.y < 0) this.pos.y += Scene.h;
+                if (this.pos.x > Scene.w) this.pos.x -= Scene.w;
+                if (this.pos.y > Scene.h) this.pos.y -= Scene.h;
+            }
+
+            // Method to draw particle
+            draw() {
+                fill(0);
+                ellipse(this.pos.x, this.pos.y, 5, 5);
+            }
+
+            // Method to update particle position
+            // Method to update particle position
+            step() {
+                let N = Scene.neighbours(this.pos, this.exclusion),
+                    avg_sin = 0,
+                    avg_cos = 0,
+                    avg_p = createVector(0, 0),
+                    avg_d = createVector(0, 0);
+                
+                // Loop through neighbors
+                for (let n of N) {
+                    avg_p.add(n.pos);
+                    if (n != this) {
+                        let away = p5.Vector.sub(this.pos, n.pos);
+                        away.div(away.magSq() * this.separation);
+                        avg_d.add(away);
+                    }
+                    avg_sin += Math.sin(n.dir.heading()) / N.length;
+                    avg_cos += Math.cos(n.dir.heading()) / N.length;
+                }
+                avg_p.div(N.length);
+                avg_d.div(N.length);
+                let avg_angle = Math.atan2(avg_cos, avg_sin);
+                avg_angle += Math.random() * 0.5 - 0.25;
+                this.dir = p5.Vector.fromAngle(avg_angle);
+                let cohesion = p5.Vector.sub(avg_p, this.pos);
+                cohesion.div(this.cohesion);
+                this.dir.add(cohesion);
+                avg_d.mult(20);
+                this.dir.add(avg_d);
+                this.dir.add(this.dir.copy().mult(this.alignment)); // Alignment
+                this.dir.normalize();
+                this.dir.mult(this.v);
+                this.pos.add(this.dir);
+                this.wrap();
+            }
+        }
+
+        // Setup function called once at the beginning
+        function setup() {
+            createCanvas(Scene.w, Scene.h);
+            for (let _ of Array(20)) {
+                Scene.swarm.push(new Particle());
+            }
+        }
+
+        // Draw function called repeatedly
+        function draw() {
+            background(220);
+            if (Count < 1000) {
+                for (let p of Scene.swarm) {
+                    p.step();
+                    p.draw();
+                }
+                Count++;
+            } else if (Count === 1000) {
+                Count++;
+                saveData();
+            } else {
+                for (let p of Scene.swarm) {
+                    p.draw();
+                }
+            }
+
+            // Calculate order parameter and nearest neighbor distance distribution
+            let orderParam = orderParameter(Scene.swarm);
+            let closestNeighbours = nearestNeighborDistanceDistribution(Scene.swarm);
+            orderParams.push(orderParam);
+            neighborDistances.push(closestNeighbours);
+            console.log('Order Parameter:', orderParam);
+            // console.log('Nearest Neighbour:', closestNeighbours);
+        }
+
+        // Function to calculate the order parameter
+        function orderParameter(boids) {
+            let sum_y = 0;
+            let sum_x = 0;
+            for (let boid of boids) {
+                let norm_vec = p5.Vector.random2D();
+                let v = boid.dir;
+                let euc = sqrt(v.x * v.x + v.y * v.y);
+                let norm_x = v.x / euc;
+                let norm_y = v.y / euc;
+                sum_x += norm_x;
+                sum_y += norm_y;
+            }
+            return sqrt(sum_x * sum_x + sum_y * sum_y) / boids.length;
+        }
+
+        // Function to calculate the nearest neighbor distance distribution
+        function nearestNeighborDistanceDistribution(boids) {
+            let distances = [];
+            for (let boid of boids) {
+                let minDistance = Infinity;
+                for (let otherBoid of boids) {
+                    if (boid !== otherBoid) {
+                        let distance = dist(boid.pos.x, boid.pos.y, otherBoid.pos.x, otherBoid.pos.y);
+                        minDistance = min(minDistance, distance);
+                    }
+                }
+                distances.push(minDistance);
+            }
+            let sum = distances.reduce((acc, curr) => acc + curr, 0);
+            return sum / distances.length;
+        }
+
+        // Function to save data to text files
+        function saveData() {
+            createTextFile(orderParams, 'order_parameter.txt');
+            createTextFile(neighborDistances, 'nearest_neighbor_distance.txt');
+        }
+
+        // Function to create a text file and initiate download
+        function createTextFile(data, filename) {
+            const dataString = data.join('\n');
+            const blob = new Blob([dataString], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.textContent = `Download ${filename}`;
+            document.body.appendChild(link);
+        }
+    </script>
+</body>
+</html>

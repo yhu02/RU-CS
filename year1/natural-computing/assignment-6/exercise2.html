@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Particle Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+
+<body>
+    <script>
+        // Declare global variables
+        let Count = 0;
+        const orderParams = []; // Array to store order parameters
+        const neighborDistances = []; // Array to store nearest neighbor distances
+        const parameter = []
+        const iterations = 10;
+        const populationSize = 20;
+        const epsilon = 0.01;
+        const Nboids = 15;
+
+        let highestOrderParameter_List = [];
+        let bestParameters_List = [];
+
+
+        // Define target order parameter
+        const targetOrderParameter = 1 // Adjust as needed
+
+        // Define parameter ranges and prior distributions
+        const cohesionRange = [15, 60];
+        const alignmentRange = [0.8, 1.2];
+        const separationRange = [0.4, 0.9];
+
+        // Define Scene object with properties and methods
+        let Scene = {
+            w: 600,
+            h: 600,
+            swarm: [],
+            // Method to find neighbors within a given radius
+            neighbours(x, radius = 100) {
+                let r = [];
+                for (let p of this.swarm) {
+                    if (dist(p.pos.x, p.pos.y, x.x, x.y) <= radius) {
+                        r.push(p);
+                    }
+                }
+                return r;
+            }
+        };
+
+        // Define Particle class
+        class Particle {
+            constructor(cohesion, seperation, alignment) {
+                this.pos = createVector(random(0, Scene.w), random(0, Scene.h));
+                this.dir = p5.Vector.random2D();
+                this.cohesion = cohesion;
+                this.separation = seperation;
+                this.exclusion = 150;
+                this.alignment = alignment;
+                this.v = 3;
+                this.noise = 0.1
+            }
+
+            // Method to wrap particle around canvas edges
+            wrap() {
+                if (this.pos.x < 0) this.pos.x += Scene.w;
+                if (this.pos.y < 0) this.pos.y += Scene.h;
+                if (this.pos.x > Scene.w) this.pos.x -= Scene.w;
+                if (this.pos.y > Scene.h) this.pos.y -= Scene.h;
+            }
+
+            // Method to draw particle
+            draw() {
+                fill(0);
+                ellipse(this.pos.x, this.pos.y, 5, 5);
+            }
+
+            // Method to update particle position
+            step() {
+                let N = Scene.neighbours(this.pos, this.exclusion),
+                    avg_sin = 0,
+                    avg_cos = 0,
+                    avg_p = createVector(0, 0),
+                    avg_d = createVector(0, 0);
+
+                // Loop through neighbors
+                for (let n of N) {
+                    avg_p.add(n.pos);
+                    if (n != this) {
+                        let away = p5.Vector.sub(this.pos, n.pos);
+                        away.div(away.magSq() * this.separation);
+                        avg_d.add(away);
+                    }
+                    avg_sin += Math.sin(n.dir.heading()) / N.length;
+                    avg_cos += Math.cos(n.dir.heading()) / N.length;
+                }
+                avg_p.div(N.length);
+                avg_d.div(N.length);
+                let avg_angle = Math.atan2(avg_cos, avg_sin);
+                avg_angle += Math.random() * this.noise - 0.25;
+                this.dir = p5.Vector.fromAngle(avg_angle);
+                let cohesion = p5.Vector.sub(avg_p, this.pos);
+                cohesion.div(this.cohesion);
+                this.dir.add(cohesion);
+                avg_d.mult(20);
+                this.dir.add(avg_d);
+                this.dir.add(this.dir.copy().mult(this.alignment)); // Alignment
+                this.dir.normalize();
+                this.dir.mult(this.v);
+                this.pos.add(this.dir);
+                this.wrap();
+            }
+        }
+
+        // Setup function called once at the beginning
+        function setup() {
+            otherMax = 0;
+            createCanvas(Scene.w, Scene.h);
+
+            // Array to store accepted parameters
+            let acceptedParameters = [];
+            let t = 0;
+
+            // Perform ABC algorithm
+            for (let i = 0; i < iterations; i++) {
+                let k = 1;
+                while (k < populationSize) {
+                    t += 1;
+                    let parameters = initializeParameters()[0];
+                    // console.log(parameters)
+                    
+                    Scene.swarm = [];
+                    for (let _ of Array(Nboids)) {
+                        Scene.swarm.push(new Particle(parameters.cohesion, parameters.separation, parameters.alignment));
+                    }
+                    // Simulate boid behavior for 300 steps
+                    for (let count = 0; count < 300; count++) {
+                        for (let p of Scene.swarm) {
+                            p.step();
+                        }
+                    }
+                    // Calculate order parameter
+                    let order_parameter = orderParameter(Scene.swarm);
+
+                    // console.log({ parameters: parameters, order: order_parameter, iteration: i });
+
+                    // Check if the order parameter is close to the target
+                    if (Math.abs(order_parameter - targetOrderParameter) < epsilon) {
+                        k = k + 1;
+                        // save accepted parameters in txt file for plot
+                        bestParameters_List.push([parameters.cohesion, parameters.separation, parameters.alignment]);
+                        highestOrderParameter_List.push(order_parameter);
+
+                        acceptedParameters.push({ parameters: parameters, order: order_parameter, iteration: i });
+                    }
+
+                    // print parameters based on accepted sets
+                    if (acceptedParameters.length != 0) {
+                        highestOrderParameter = findMaxOrderIndex(acceptedParameters);
+                        if (highestOrderParameter.order > otherMax) {
+                            otherMax = highestOrderParameter.order;
+                            console.log("Iteration: %s Highest order %s", i, highestOrderParameter.order)
+                            console.log("Current best Stats: Cohesion %s , Seperation %s and Alignment %s", highestOrderParameter.parameters.cohesion, highestOrderParameter.parameters.separation, highestOrderParameter.parameters.alignment);
+                        }else{
+                            console.log("Iteration: %s ", i)
+                        }
+                    } else {
+                        console.log("Iteration: %s ", i)
+                    }
+                }
+            }
+
+            highestOrderParameter = findMaxOrderIndex(acceptedParameters);
+
+            console.log("Highest Order: ", highestOrderParameter.order)
+            console.log("Cohesion %s , Seperation %s and Alignment %s", highestOrderParameter.parameters.cohesion, highestOrderParameter.parameters.separation, highestOrderParameter.parameters.alignment);
+            console.log("Highest Order: ", highestOrderParameter.order)
+            console.log("Total amount of accepted parameters: ", acceptedParameters.length);
+            console.log("Relative amount of time: ", t)
+
+            console.log(highestOrderParameter_List)
+            console.log(bestParameters_List)
+            saveData();
+
+
+            setScene(highestOrderParameter.parameters)
+        }
+
+
+        // Function to find the index of the accepted parameter set with the maximum order parameter
+        function findMaxOrderIndex(acceptedParameters) {
+            let maxOrder = -Infinity;
+            let maxOrderIndex = null;
+            for (let i = 0; i < acceptedParameters.length; i++) {
+                if (acceptedParameters[i].order > maxOrder) {
+                    maxOrder = acceptedParameters[i].order;
+                    maxOrderIndex = acceptedParameters[i];
+                }
+            }
+            return maxOrderIndex;
+        }
+        function setScene(parameter) {
+            Scene.swarm = [];
+            for (let _ of Array(Nboids)) {
+                Scene.swarm.push(new Particle(parameter.cohesion, parameter.separation, parameter.alignment));
+            }
+        }
+
+
+        // Define function to initialize parameters
+        function initializeParameters() {
+            const parameters = [];
+            const cohesion = random(cohesionRange[0], cohesionRange[1]);
+            const alignment = random(alignmentRange[0], alignmentRange[1]);
+            const separation = random(separationRange[0], separationRange[1]);
+            parameters.push({ cohesion, alignment, separation });
+            
+            return parameters;
+        }
+
+        function draw() {
+            background(220);
+            if (Count < 300) {
+                for (let p of Scene.swarm) {
+                    p.step();
+                    p.draw();
+                }
+                Count++;
+            } else if (Count === 300) {
+                Count++;
+                param = orderParameter(Scene.swarm)
+                console.log(param)
+                // saveData();
+            } else {
+                for (let p of Scene.swarm) {
+                    p.draw();
+                }
+            }
+        }
+
+        // Function to calculate the order parameter
+        function orderParameter(boids) {
+            let avgDirX = 0;
+            let avgDirY = 0;
+
+            // Calculate the sum of normalized direction vectors
+            for (let boid of boids) {
+                let v = createVector(boid.dir.x, boid.dir.y); // Create a copy of the direction vector
+                v.normalize(); // Normalize the direction vector
+                avgDirX += v.x;
+                avgDirY += v.y;
+            }
+
+            // Divide by the number of boids to get the average direction vector
+            avgDirX /= boids.length;
+            avgDirY /= boids.length;
+
+            // Calculate the magnitude of the average direction vector
+            let magnitude = sqrt(avgDirX * avgDirX + avgDirY * avgDirY);
+
+            return magnitude;
+        }
+
+        // Function to save data to text files
+        function saveData() {
+        createTextFile(highestOrderParameter_List, 'highest_order_parameters.txt');
+        createTextFile(bestParameters_List, 'best_parameters.txt');
+        }
+
+        // Function to create a text file and initiate download
+        function createTextFile(data, filename) {
+            const dataString = data.join('\n');
+            const blob = new Blob([dataString], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.textContent = `Download ${filename}`;
+            document.body.appendChild(link);
+        }
+
+
+    </script>
+</body>
+
+</html>
